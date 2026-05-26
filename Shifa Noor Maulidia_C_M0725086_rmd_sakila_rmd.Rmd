@@ -1,0 +1,280 @@
+---
+title: "Analisis 10 Kategori Film yang Paling Sering Disewa"
+author: "shifa Noor Maulidia/C/M0725086"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: cosmo
+---
+
+<style>
+
+/* Background */
+body{
+  font-family: Arial, sans-serif;
+  background-color:#f5f7fa;
+  line-height:1.8;
+}
+
+/* Judul */
+.title{
+  background-color:#0b2545;
+  color:white;
+  text-align:center;
+  padding:15px;
+  border-radius:10px;
+}
+
+/* Heading */
+h1{
+  background-color:#134074;
+  color:white;
+  padding:10px;
+  border-radius:8px;
+}
+
+h2{
+  color:#134074;
+  border-bottom:3px solid #134074;
+  padding-bottom:5px;
+}
+
+h3{
+  color:#0b2545;
+  border-left:5px solid #134074;
+  padding-left:10px;
+}
+
+/* Table */
+table{
+  border-collapse:collapse;
+  width:100%;
+}
+
+th{
+  background-color:#134074;
+  color:white;
+  padding:10px;
+}
+
+td{
+  padding:8px;
+  border-bottom:1px solid #dddddd;
+}
+
+tr:nth-child(even){
+  background-color:#f2f2f2;
+}
+
+tr:hover{
+  background-color:#dbeafe;
+}
+
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Library
+```{r library, warning=FALSE}
+library(DBI)
+library(odbc)
+library(ggplot2)
+library(knitr)
+```
+# Pendahuluan
+
+Database Sakila merupakan database simulasi rental film yang disediakan oleh MySQL. Database ini berisi berbagai informasi seperti actor, address, category, city, country, customer, film, film actor, film category, film text, inventory, language, payment, rental, staff,dan store. Pada laporan ini dilakukan analisis mengenai kategori film yang paling sering disewa oleh customer. Analisis ini bertujuan untuk mengetahui kategori film yang paling diminati sehingga dapat membantu perusahaan rental dalam menentukan strategi bisnis dan pengelolaan stok film.
+
+<h1 style="background-color:#92b4de;">
+Insight Analisis
+</h1>
+
+<p style="text-align:justify;">
+Insight utama yang dianalisis adalah <strong>10 kategori film yang paling sering disewa</strong> pada database Sakila. Dengan analisis ini dapat diketahui preferensi customer terhadap jenis film tertentu.
+</p>
+
+
+# Koneksi Database
+mengkoneksikan database MySQL, yaitu sakila dengan Rstudio menggunakan fungsi `dbConnect()`
+```{r koneksi}
+koneksidata1 <- DBI::dbConnect(odbc::odbc(),
+Driver = "MySQL ODBC 8.0 ANSI Driver",
+Server = "127.0.0.1",
+Database = "sakila",
+UID = "root",
+PWD = "shifalia66", #sesuaikan dg password masing-masing
+Port = 3306)
+```
+
+# Mengambil Data
+Setelah terkoneksi dengan SQL, kita menggunakan blok kode SQL untuk mendapatkan data jumlah sewa dari tiap-tiap kategori film, dan menyimpan data hasil kueri data dalam data frame data_kategori
+```{r query}
+query1 <- "
+SELECT 
+category.name AS kategori,
+COUNT(rental.rental_id) AS jumlah_rental
+FROM category
+JOIN film_category
+ON category.category_id = film_category.category_id
+JOIN inventory
+ON film_category.film_id = inventory.film_id
+JOIN rental
+ON inventory.inventory_id = rental.inventory_id
+GROUP BY category.name
+ORDER BY jumlah_rental DESC
+"
+
+data_kategori <- dbGetQuery(koneksidata1, query1)
+
+print(data_kategori)
+```
+
+# Ringkasan Data
+Ringkasan data menampilkan ringkasan statistik deskriptif dari data, seperti nilai minimal, kuartil pertama, median, rata-rata, kuartil ketiga, dan maksimal
+```{r}
+knitr::kable(data_kategori,
+             caption = "Jumlah rental film berdasarkan kategori film",
+             col.names = c("Kategori Film", "jumlah Rental"))
+
+summary(data_kategori)
+```
+
+# Analisis Statistik
+
+Analisis statistik deskriptif digunakan untuk melihat gambaran umum data rental film pada database Sakila. Statistik deskriptif membantu memahami distribusi data melalui nilai minimum, kuartil, median, mean, dan maksimum.
+
+## Mean (Rata-rata)
+
+Mean digunakan untuk mengetahui rata-rata jumlah rental pada setiap kategori film.
+
+$$
+\bar{x} = \frac{\sum x}{n}
+$$
+
+Keterangan:
+
+- $\bar{x}$ = rata-rata data
+- $\sum x$ = total seluruh data
+- $n$ = jumlah data
+
+Penjelasan:  
+Mean menunjukkan rata-rata jumlah rental dari seluruh kategori film pada database Sakila.
+
+---
+
+## Median
+
+Median merupakan nilai tengah dari data yang telah diurutkan.
+
+$$
+Me = \frac{n+1}{2}
+$$
+
+Keterangan:
+
+- $Me$ = median
+- $n$ = jumlah data
+
+Penjelasan:  
+Median digunakan untuk melihat nilai tengah jumlah rental kategori film.
+
+---
+
+## Kuartil 1 (Q1)
+
+Kuartil 1 menunjukkan seperempat data terendah.
+
+$$
+Q_1 = \frac{1(n+1)}{4}
+$$
+
+Keterangan:
+
+- $Q_1$ = kuartil pertama
+- $n$ = jumlah data
+
+Penjelasan:  
+Kuartil 1 membantu mengetahui batas bawah distribusi data rental.
+
+---
+
+## Kuartil 3 (Q3)
+
+Kuartil 3 menunjukkan seperempat data tertinggi.
+
+$$
+Q_3 = \frac{3(n+1)}{4}
+$$
+
+Keterangan:
+
+- $Q_3$ = kuartil ketiga
+- $n$ = jumlah data
+
+Penjelasan:  
+Kuartil 3 digunakan untuk melihat batas atas distribusi data rental.
+
+---
+
+# TOP 10 Kategori Film Yang Paling Sering Disewa
+
+Menampilkan 10 kategori film dengan jumlah sewa yang banyak.
+```{r}
+query2 <- "
+SELECT 
+category.name AS kategori,
+COUNT(rental.rental_id) AS jumlah_rental
+FROM category
+JOIN film_category
+ON category.category_id = film_category.category_id
+JOIN inventory
+ON film_category.film_id = inventory.film_id
+JOIN rental
+ON inventory.inventory_id = rental.inventory_id
+GROUP BY category.name
+ORDER BY jumlah_rental DESC
+LIMIT 10
+"
+
+TOP10_data_kategori <- dbGetQuery(koneksidata1, query2)
+
+print(TOP10_data_kategori)
+```
+
+# Visualisasi Kategori Film Paling Sering Disewa
+
+```{r visualisasi}
+ggplot(TOP10_data_kategori,
+       aes(x = reorder(kategori, jumlah_rental),
+           y = jumlah_rental)) +
+
+  geom_col(fill = "steelblue") +
+
+  geom_text(aes(label = jumlah_rental),
+            hjust = -0.2,
+            size = 4) +
+
+  coord_flip() +
+
+  labs(
+    title = "10 Kategori Film dengan Jumlah Rental Terbanyak",
+    x = "Kategori Film",
+    y = "Jumlah Rental"
+  ) +
+
+  theme_minimal()
+```
+
+# Interpretasi Data
+
+Visualisasi data dilakukan menggunakan diagram batang (*bar chart*) untuk menampilkan 10 kategori film dengan jumlah rental tertinggi pada database Sakila. kategori film yang memasuki top 10 dengan jumlah rental terbanyak adalah sports, animasi, aksi, sci-fi, keluarga, family, drama, dokumenter, foreign, permainan, dan anak-anak
+Berdasarkan diagram di atas, dapat kita lihat bahwa film dengan kategori **sports** memiliki jumlah rental terbanyak dengan total 1.179. Hal ini menunjukkan bahwa para customer lebih tertarik pada film bertema olahraga. Sedangkan film berkategori **anak-anak** merupakan kategori film yang menempati urutan ke-10 jumlah rental terbanyak dengan total 945.
+
+Selain itu, kategori **Animasi**, **Keluarga**, dan **anak-anak** juga cukup populer, yang menunjukkan bahwa film keluarga dan anak-anak banyak diminati. Kategori **Aksi** dan **Sci-Fi** menunjukkan bahwa customer juga menyukai film dengan adegan menegangkan dan unsur imajinasi. Sementara itu, kategori **Drama** dan **Documenter** menunjukkan adanya minat terhadap film yang bersifat emosional dan informatif.
+
+Secara keseluruhan, hasil analisis menunjukkan bahwa preferensi customer terhadap kategori film cukup beragam sehingga informasi ini dapat dimanfaatkan perusahaan rental untuk menentukan strategi promosi dan pengelolaan stok film.
